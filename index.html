@@ -3,32 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DCA Portfolio Manager - Quản lý đầu tư cá nhân</title>
+    <title>FinancePro - Quản Lý Tài Chính & Đầu Tư</title>
     
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Google Fonts: Inter -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
     <!-- Chart.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <!-- Lucide Icons CDN -->
     <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
     <style>
         body {
             font-family: 'Inter', sans-serif;
             background-color: #f8fafc;
         }
+        .tab-active {
+            border-bottom: 3px solid #4f46e5;
+            color: #4f46e5;
+            font-weight: 700;
+        }
         .glass-card {
-            background: rgba(255, 255, 255, 0.9);
+            background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
             border: 1px solid rgba(226, 232, 240, 0.8);
         }
         .custom-scrollbar::-webkit-scrollbar {
-            width: 6px;
+            width: 5px;
+            height: 5px;
         }
         .custom-scrollbar::-webkit-scrollbar-track {
             background: #f1f1f1;
@@ -41,211 +47,405 @@
 </head>
 <body class="text-slate-800 antialiased">
 
-    <div class="min-h-screen pb-12">
+    <div class="min-h-screen flex flex-col">
         <!-- Header -->
-        <header class="bg-indigo-700 text-white py-8 mb-8 shadow-lg">
-            <div class="container mx-auto px-4">
-                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div>
-                        <h1 class="text-2xl md:text-3xl font-bold flex items-center gap-2">
-                            <i data-lucide="trending-up"></i> DCA Portfolio Manager
-                        </h1>
-                        <p class="text-indigo-100 mt-1 opacity-80">Theo dõi hành trình tích sản mỗi tháng</p>
+        <header class="bg-white border-b border-slate-200 sticky top-0 z-50">
+            <div class="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <div class="bg-indigo-600 p-2 rounded-lg">
+                        <i data-lucide="wallet" class="text-white w-5 h-5"></i>
                     </div>
-                    <div class="bg-indigo-600/50 px-6 py-3 rounded-2xl border border-indigo-400/30">
-                        <span class="text-xs font-semibold uppercase tracking-wider text-indigo-200">Tổng vốn đầu tư</span>
-                        <div class="text-2xl md:text-3xl font-bold" id="total-invested">0 ₫</div>
-                    </div>
+                    <h1 class="text-xl font-bold tracking-tight text-slate-900">Finance<span class="text-indigo-600">Pro</span></h1>
                 </div>
+                <div class="text-xs font-medium text-slate-500 bg-slate-100 px-3 py-1 rounded-full">
+                    Dữ liệu lưu cục bộ (LocalStorage)
+                </div>
+            </div>
+            
+            <!-- Tab Navigation -->
+            <div class="max-w-5xl mx-auto px-4 flex gap-8">
+                <button onclick="switchTab('thu-chi')" id="btn-thu-chi" class="py-3 text-sm font-medium transition-all tab-active flex items-center gap-2">
+                    <i data-lucide="arrow-up-down" class="w-4 h-4"></i> Quản Lý Thu Chi
+                </button>
+                <button onclick="switchTab('dca')" id="btn-dca" class="py-3 text-sm font-medium transition-all text-slate-500 hover:text-indigo-600 flex items-center gap-2">
+                    <i data-lucide="pie-chart" class="w-4 h-4"></i> Quản Lý Đầu Tư DCA
+                </button>
             </div>
         </header>
 
-        <main class="container mx-auto px-4">
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                
-                <!-- Cột trái: Nhập liệu & Biểu đồ -->
-                <div class="lg:col-span-4 space-y-8">
-                    
-                    <!-- Form Nhập liệu -->
-                    <section class="glass-card p-6 rounded-3xl shadow-sm">
-                        <h2 class="text-lg font-bold mb-6 flex items-center gap-2">
-                            <i data-lucide="plus-circle" class="text-indigo-600"></i> Thêm giao dịch mới
-                        </h2>
-                        <form id="transaction-form" class="space-y-4">
-                            <div>
-                                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Ngày giao dịch</label>
-                                <input type="date" id="date" required class="w-full p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Loại tài sản</label>
-                                <select id="asset-type" required class="w-full p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all bg-white">
-                                    <option value="Chứng khoán">Chứng khoán</option>
-                                    <option value="Chứng chỉ quỹ">Chứng chỉ quỹ</option>
-                                    <option value="Bạc">Tích sản (Bạc)</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Mã / Tên tài sản</label>
-                                <input type="text" id="asset-name" placeholder="VD: VNM, FPT, TCBF..." required class="w-full p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Số tiền đầu tư (VNĐ)</label>
-                                <input type="number" id="amount" placeholder="VD: 1000000" required class="w-full p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all">
-                            </div>
-                            <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-2xl shadow-lg shadow-indigo-200 transition-all transform active:scale-[0.98]">
-                                Lưu giao dịch
-                            </button>
-                        </form>
-                    </section>
-
-                    <!-- Biểu đồ phân bổ -->
-                    <section class="glass-card p-6 rounded-3xl shadow-sm">
-                        <h2 class="text-lg font-bold mb-6 flex items-center gap-2">
-                            <i data-lucide="pie-chart" class="text-indigo-600"></i> Tỷ trọng danh mục
-                        </h2>
-                        <div class="relative h-64">
-                            <canvas id="allocationChart"></canvas>
-                        </div>
-                    </section>
+        <main class="flex-grow max-w-5xl mx-auto w-full px-4 py-8">
+            
+            <!-- TAB 1: QUẢN LÝ THU CHI -->
+            <div id="tab-thu-chi" class="space-y-8 animate-in fade-in duration-500">
+                <!-- Dashboard Thu Chi -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="glass-card p-6 rounded-2xl shadow-sm border-l-4 border-emerald-500">
+                        <p class="text-xs font-bold text-slate-400 uppercase mb-1">Tổng Thu Nhập</p>
+                        <h3 class="text-2xl font-bold text-emerald-600" id="total-income">0 ₫</h3>
+                    </div>
+                    <div class="glass-card p-6 rounded-2xl shadow-sm border-l-4 border-rose-500">
+                        <p class="text-xs font-bold text-slate-400 uppercase mb-1">Tổng Chi Tiêu</p>
+                        <h3 class="text-2xl font-bold text-rose-600" id="total-expense">0 ₫</h3>
+                    </div>
+                    <div class="glass-card p-6 rounded-2xl shadow-sm border-l-4 border-indigo-500">
+                        <p class="text-xs font-bold text-slate-400 uppercase mb-1">Số Dư Hiện Tại</p>
+                        <h3 class="text-2xl font-bold text-indigo-600" id="current-balance">0 ₫</h3>
+                    </div>
                 </div>
 
-                <!-- Cột phải: Lịch sử giao dịch -->
-                <div class="lg:col-span-8">
-                    <section class="glass-card rounded-3xl shadow-sm overflow-hidden h-full flex flex-col">
-                        <div class="p-6 border-b border-slate-100 flex items-center justify-between">
-                            <h2 class="text-lg font-bold flex items-center gap-2">
-                                <i data-lucide="list" class="text-indigo-600"></i> Lịch sử giao dịch
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                    <!-- Form Thu Chi -->
+                    <div class="lg:col-span-4">
+                        <div class="glass-card p-6 rounded-2xl shadow-sm sticky top-24">
+                            <h2 class="text-lg font-bold mb-6 flex items-center gap-2">
+                                <i data-lucide="plus-circle" class="text-indigo-600 w-5 h-5"></i> Thêm Giao Dịch
                             </h2>
-                            <span class="text-xs font-medium text-slate-400" id="transaction-count">0 giao dịch</span>
+                            <form id="form-thu-chi" class="space-y-4">
+                                <div>
+                                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Ngày</label>
+                                    <input type="date" id="tc-date" required class="w-full p-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Loại</label>
+                                    <select id="tc-type" onchange="updateCategories()" class="w-full p-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white">
+                                        <option value="thu">Thu Nhập (+)</option>
+                                        <option value="chi">Chi Tiêu (-)</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Danh Mục</label>
+                                    <select id="tc-category" class="w-full p-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white"></select>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Số Tiền (VNĐ)</label>
+                                    <input type="number" id="tc-amount" placeholder="VD: 500000" required class="w-full p-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Ghi Chú</label>
+                                    <input type="text" id="tc-note" placeholder="Ăn sáng, Lương tháng 3..." class="w-full p-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none text-sm">
+                                </div>
+                                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl transition-all shadow-lg shadow-indigo-100">
+                                    Lưu Giao Dịch
+                                </button>
+                            </form>
                         </div>
-                        
-                        <div class="overflow-x-auto custom-scrollbar flex-grow">
-                            <table class="w-full text-sm text-left">
-                                <thead class="bg-slate-50/50 text-slate-500 uppercase text-[10px] font-bold tracking-wider">
-                                    <tr>
-                                        <th class="px-6 py-4">Ngày</th>
-                                        <th class="px-6 py-4">Loại</th>
-                                        <th class="px-6 py-4">Tài sản</th>
-                                        <th class="px-6 py-4 text-right">Số tiền</th>
-                                        <th class="px-6 py-4 text-center">Thao tác</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="transaction-list" class="divide-y divide-slate-100">
-                                    <!-- Dữ liệu sẽ render ở đây -->
-                                </tbody>
-                            </table>
-                            
-                            <!-- Empty State -->
-                            <div id="empty-state" class="hidden flex flex-col items-center justify-center py-20 text-slate-400">
-                                <i data-lucide="database" class="w-12 h-12 mb-4 opacity-20"></i>
-                                <p>Chưa có dữ liệu giao dịch nào.</p>
+                    </div>
+
+                    <!-- Bảng Thu Chi -->
+                    <div class="lg:col-span-8">
+                        <div class="glass-card rounded-2xl shadow-sm overflow-hidden">
+                            <div class="p-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+                                <h2 class="text-sm font-bold text-slate-700">Lịch Sử Thu Chi</h2>
+                                <span id="tc-count" class="text-[10px] bg-indigo-100 text-indigo-600 px-2 py-0.5 rounded-full font-bold">0 bản ghi</span>
+                            </div>
+                            <div class="overflow-x-auto custom-scrollbar">
+                                <table class="w-full text-sm text-left">
+                                    <thead class="text-[10px] text-slate-400 uppercase font-bold border-b border-slate-100">
+                                        <tr>
+                                            <th class="px-6 py-4">Ngày</th>
+                                            <th class="px-6 py-4">Danh Mục</th>
+                                            <th class="px-6 py-4 text-right">Số Tiền</th>
+                                            <th class="px-6 py-4">Ghi Chú</th>
+                                            <th class="px-6 py-4 text-center">Xóa</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="list-thu-chi" class="divide-y divide-slate-50">
+                                        <!-- Render JS -->
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
-                    </section>
+                    </div>
                 </div>
+            </div>
 
+            <!-- TAB 2: QUẢN LÝ ĐẦU TƯ DCA -->
+            <div id="tab-dca" class="hidden space-y-8 animate-in fade-in duration-500">
+                <!-- Dashboard DCA -->
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-8">
+                    <div class="md:col-span-4 space-y-4">
+                        <div class="glass-card p-6 rounded-2xl shadow-sm border-l-4 border-amber-500">
+                            <p class="text-xs font-bold text-slate-400 uppercase mb-1">Tổng Vốn Đầu Tư</p>
+                            <h3 class="text-3xl font-bold text-slate-900" id="total-invested">0 ₫</h3>
+                        </div>
+                        <div class="glass-card p-6 rounded-2xl shadow-sm">
+                            <h3 class="text-xs font-bold text-slate-400 uppercase mb-4">Tỷ Trọng Phân Bổ</h3>
+                            <div class="h-64 relative">
+                                <canvas id="dcaChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Form & Bảng DCA -->
+                    <div class="md:col-span-8 space-y-8">
+                        <!-- Form DCA -->
+                        <div class="glass-card p-6 rounded-2xl shadow-sm">
+                            <h2 class="text-lg font-bold mb-6 flex items-center gap-2">
+                                <i data-lucide="trending-up" class="text-amber-600 w-5 h-5"></i> Thêm Khoản Đầu Tư
+                            </h2>
+                            <form id="form-dca" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Ngày</label>
+                                    <input type="date" id="dca-date" required class="w-full p-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-amber-500 outline-none text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Nhóm Tài Sản</label>
+                                    <select id="dca-group" class="w-full p-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-amber-500 outline-none text-sm bg-white">
+                                        <option value="Chứng khoán">Chứng khoán</option>
+                                        <option value="Chứng chỉ quỹ">Chứng chỉ quỹ</option>
+                                        <option value="Bạc/Tích sản">Bạc/Tích sản</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Mã Tài Sản</label>
+                                    <input type="text" id="dca-code" placeholder="VD: FUEVFVND, HPG..." required class="w-full p-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-amber-500 outline-none text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Số Tiền (VNĐ)</label>
+                                    <input type="number" id="dca-amount" placeholder="1.000.000 - 2.000.000" required class="w-full p-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-amber-500 outline-none text-sm">
+                                </div>
+                                <div class="md:col-span-2">
+                                    <button type="submit" class="w-full bg-amber-600 hover:bg-amber-700 text-white font-bold py-3 rounded-xl transition-all shadow-lg shadow-amber-100">
+                                        Lưu Khoản Đầu Tư
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- Bảng DCA -->
+                        <div class="glass-card rounded-2xl shadow-sm overflow-hidden">
+                            <div class="p-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+                                <h2 class="text-sm font-bold text-slate-700">Lịch Sử Đầu Tư</h2>
+                                <span id="dca-count" class="text-[10px] bg-amber-100 text-amber-600 px-2 py-0.5 rounded-full font-bold">0 bản ghi</span>
+                            </div>
+                            <div class="overflow-x-auto custom-scrollbar">
+                                <table class="w-full text-sm text-left">
+                                    <thead class="text-[10px] text-slate-400 uppercase font-bold border-b border-slate-100">
+                                        <tr>
+                                            <th class="px-6 py-4">Ngày</th>
+                                            <th class="px-6 py-4">Nhóm</th>
+                                            <th class="px-6 py-4">Mã</th>
+                                            <th class="px-6 py-4 text-right">Số Tiền</th>
+                                            <th class="px-6 py-4 text-center">Xóa</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="list-dca" class="divide-y divide-slate-50">
+                                        <!-- Render JS -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </main>
     </div>
 
-    <!-- JavaScript Logic -->
     <script>
-        // Khởi tạo Lucide Icons
-        lucide.createIcons();
-
-        // State của ứng dụng
-        let transactions = JSON.parse(localStorage.getItem('dca_portfolio_data')) || [];
-        let myChart = null;
-
-        // DOM Elements
-        const form = document.getElementById('transaction-form');
-        const transactionList = document.getElementById('transaction-list');
-        const totalInvestedEl = document.getElementById('total-invested');
-        const countEl = document.getElementById('transaction-count');
-        const emptyState = document.getElementById('empty-state');
-
-        // Định dạng tiền tệ VNĐ
-        const formatVND = (amount) => {
-            return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+        // --- Cấu hình & Dữ liệu mặc định ---
+        const categories = {
+            thu: ["Lương Telus", "Lương Appen", "Dự án RWS / Echo", "Dự án Diamond", "Khác"],
+            chi: ["Sinh hoạt phí", "Học phí/Tài liệu IU", "Tiêu dùng cá nhân", "Khác"]
         };
 
-        // Cập nhật Dashboard & Biểu đồ
-        const updateUI = () => {
-            // 1. Render danh sách
-            transactionList.innerHTML = '';
-            if (transactions.length === 0) {
-                emptyState.classList.remove('hidden');
-            } else {
-                emptyState.classList.add('hidden');
-                // Sắp xếp theo ngày mới nhất
-                const sorted = [...transactions].sort((a, b) => new Date(b.date) - new Date(a.date));
-                
-                sorted.forEach((t) => {
-                    const row = document.createElement('tr');
-                    row.className = "hover:bg-slate-50/80 transition-colors";
-                    
-                    // Badge màu cho loại tài sản
-                    let badgeClass = "";
-                    if(t.type === "Chứng khoán") badgeClass = "bg-blue-100 text-blue-700";
-                    else if(t.type === "Chứng chỉ quỹ") badgeClass = "bg-emerald-100 text-emerald-700";
-                    else badgeClass = "bg-amber-100 text-amber-700";
+        let state = JSON.parse(localStorage.getItem('finance_data')) || {
+            transactions: [],
+            investments: []
+        };
 
-                    row.innerHTML = `
+        let dcaChart = null;
+
+        // --- Khởi tạo ---
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            initDates();
+            updateCategories();
+            renderAll();
+        });
+
+        function initDates() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('tc-date').value = today;
+            document.getElementById('dca-date').value = today;
+        }
+
+        // --- Quản lý Tabs ---
+        function switchTab(tab) {
+            const tabs = ['thu-chi', 'dca'];
+            tabs.forEach(t => {
+                document.getElementById(`tab-${t}`).classList.toggle('hidden', t !== tab);
+                document.getElementById(`btn-${t}`).classList.toggle('tab-active', t === tab);
+                document.getElementById(`btn-${t}`).classList.toggle('text-slate-500', t !== tab);
+            });
+            if (tab === 'dca') renderDCAChart();
+        }
+
+        // --- Xử lý Thu Chi ---
+        function updateCategories() {
+            const type = document.getElementById('tc-type').value;
+            const select = document.getElementById('tc-category');
+            select.innerHTML = categories[type].map(cat => `<option value="${cat}">${cat}</option>`).join('');
+        }
+
+        document.getElementById('form-thu-chi').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const transaction = {
+                id: Date.now(),
+                date: document.getElementById('tc-date').value,
+                type: document.getElementById('tc-type').value,
+                category: document.getElementById('tc-category').value,
+                amount: parseFloat(document.getElementById('tc-amount').value),
+                note: document.getElementById('tc-note').value
+            };
+            state.transactions.push(transaction);
+            saveAndRender();
+            e.target.reset();
+            initDates();
+            updateCategories();
+        });
+
+        function deleteTransaction(id) {
+            if (confirm('Xóa giao dịch này?')) {
+                state.transactions = state.transactions.filter(t => t.id !== id);
+                saveAndRender();
+            }
+        }
+
+        // --- Xử lý DCA ---
+        document.getElementById('form-dca').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const investment = {
+                id: Date.now(),
+                date: document.getElementById('dca-date').value,
+                group: document.getElementById('dca-group').value,
+                code: document.getElementById('dca-code').value.toUpperCase(),
+                amount: parseFloat(document.getElementById('dca-amount').value)
+            };
+            state.investments.push(investment);
+            saveAndRender();
+            e.target.reset();
+            initDates();
+        });
+
+        function deleteInvestment(id) {
+            if (confirm('Xóa khoản đầu tư này?')) {
+                state.investments = state.investments.filter(i => i.id !== id);
+                saveAndRender();
+            }
+        }
+
+        // --- Render UI ---
+        function renderAll() {
+            renderThuChi();
+            renderDCA();
+            renderDCAChart();
+        }
+
+        function saveAndRender() {
+            localStorage.setItem('finance_data', JSON.stringify(state));
+            renderAll();
+        }
+
+        function formatCurrency(num) {
+            return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(num);
+        }
+
+        function renderThuChi() {
+            const list = document.getElementById('list-thu-chi');
+            const sorted = [...state.transactions].sort((a, b) => new Date(b.date) - new Date(a.date) || b.id - a.id);
+            
+            let income = 0, expense = 0;
+            
+            list.innerHTML = sorted.map(t => {
+                if (t.type === 'thu') income += t.amount;
+                else expense += t.amount;
+
+                return `
+                    <tr class="hover:bg-slate-50 transition-colors">
                         <td class="px-6 py-4 text-slate-500 font-medium">${t.date}</td>
                         <td class="px-6 py-4">
-                            <span class="px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase ${badgeClass}">${t.type}</span>
+                            <span class="px-2 py-1 rounded-lg text-[10px] font-bold uppercase ${t.type === 'thu' ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'}">
+                                ${t.category}
+                            </span>
                         </td>
-                        <td class="px-6 py-4 font-bold text-slate-700">${t.name}</td>
-                        <td class="px-6 py-4 text-right font-mono font-semibold text-indigo-600">${formatVND(t.amount)}</td>
+                        <td class="px-6 py-4 text-right font-bold ${t.type === 'thu' ? 'text-emerald-600' : 'text-rose-600'}">
+                            ${t.type === 'thu' ? '+' : '-'}${formatCurrency(t.amount)}
+                        </td>
+                        <td class="px-6 py-4 text-slate-400 italic text-xs">${t.note || '-'}</td>
                         <td class="px-6 py-4 text-center">
-                            <button onclick="deleteTransaction('${t.id}')" class="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all">
+                            <button onclick="deleteTransaction(${t.id})" class="text-slate-300 hover:text-rose-500 transition-colors">
                                 <i data-lucide="trash-2" class="w-4 h-4"></i>
                             </button>
                         </td>
-                    `;
-                    transactionList.appendChild(row);
-                });
-                lucide.createIcons();
-            }
+                    </tr>
+                `;
+            }).join('');
 
-            // 2. Tính tổng vốn
-            const total = transactions.reduce((sum, t) => sum + Number(t.amount), 0);
-            totalInvestedEl.innerText = formatVND(total);
-            countEl.innerText = `${transactions.length} giao dịch`;
+            document.getElementById('total-income').innerText = formatCurrency(income);
+            document.getElementById('total-expense').innerText = formatCurrency(expense);
+            document.getElementById('current-balance').innerText = formatCurrency(income - expense);
+            document.getElementById('tc-count').innerText = `${state.transactions.length} bản ghi`;
+            lucide.createIcons();
+        }
 
-            // 3. Cập nhật Biểu đồ
-            updateChart();
-        };
+        function renderDCA() {
+            const list = document.getElementById('list-dca');
+            const sorted = [...state.investments].sort((a, b) => new Date(b.date) - new Date(a.date) || b.id - a.id);
+            
+            const total = state.investments.reduce((sum, i) => sum + i.amount, 0);
+            
+            list.innerHTML = sorted.map(i => `
+                <tr class="hover:bg-slate-50 transition-colors">
+                    <td class="px-6 py-4 text-slate-500 font-medium">${i.date}</td>
+                    <td class="px-6 py-4">
+                        <span class="px-2 py-1 rounded-lg text-[10px] font-bold uppercase bg-amber-100 text-amber-600">
+                            ${i.group}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 font-bold text-slate-700">${i.code}</td>
+                    <td class="px-6 py-4 text-right font-bold text-indigo-600">${formatCurrency(i.amount)}</td>
+                    <td class="px-6 py-4 text-center">
+                        <button onclick="deleteInvestment(${i.id})" class="text-slate-300 hover:text-rose-500 transition-colors">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
 
-        // Logic xử lý biểu đồ Chart.js
-        const updateChart = () => {
+            document.getElementById('total-invested').innerText = formatCurrency(total);
+            document.getElementById('dca-count').innerText = `${state.investments.length} bản ghi`;
+            lucide.createIcons();
+        }
+
+        // --- Chart.js ---
+        function renderDCAChart() {
+            const ctx = document.getElementById('dcaChart').getContext('2d');
+            
             const dataMap = {
-                'Chứng khoán': 0,
-                'Chứng chỉ quỹ': 0,
-                'Bạc': 0
+                "Chứng khoán": 0,
+                "Chứng chỉ quỹ": 0,
+                "Bạc/Tích sản": 0
             };
 
-            transactions.forEach(t => {
-                if (dataMap[t.type] !== undefined) {
-                    dataMap[t.type] += Number(t.amount);
-                }
+            state.investments.forEach(i => {
+                if (dataMap[i.group] !== undefined) dataMap[i.group] += i.amount;
             });
 
-            const ctx = document.getElementById('allocationChart').getContext('2d');
-            
-            if (myChart) {
-                myChart.destroy();
-            }
+            const labels = Object.keys(dataMap);
+            const values = Object.values(dataMap);
+            const hasData = values.some(v => v > 0);
 
-            myChart = new Chart(ctx, {
+            if (dcaChart) dcaChart.destroy();
+
+            dcaChart = new Chart(ctx, {
                 type: 'doughnut',
                 data: {
-                    labels: Object.keys(dataMap),
+                    labels: labels,
                     datasets: [{
-                        data: Object.values(dataMap),
-                        backgroundColor: ['#4f46e5', '#10b981', '#f59e0b'],
+                        data: hasData ? values : [1],
+                        backgroundColor: hasData ? ['#4f46e5', '#10b981', '#f59e0b'] : ['#e2e8f0'],
                         borderWidth: 0,
-                        hoverOffset: 10
+                        hoverOffset: 4
                     }]
                 },
                 options: {
@@ -257,13 +457,14 @@
                             labels: {
                                 usePointStyle: true,
                                 padding: 20,
-                                font: { size: 11, weight: '600' }
+                                font: { size: 10, weight: '600' }
                             }
                         },
                         tooltip: {
+                            enabled: hasData,
                             callbacks: {
                                 label: function(context) {
-                                    return ` ${context.label}: ${formatVND(context.raw)}`;
+                                    return ` ${context.label}: ${formatCurrency(context.raw)}`;
                                 }
                             }
                         }
@@ -271,43 +472,7 @@
                     cutout: '70%'
                 }
             });
-        };
-
-        // Thêm giao dịch
-        form.addEventListener('submit', (e) => {
-            e.preventDefault();
-            
-            const newTransaction = {
-                id: Date.now().toString(),
-                date: document.getElementById('date').value,
-                type: document.getElementById('asset-type').value,
-                name: document.getElementById('asset-name').value,
-                amount: document.getElementById('amount').value
-            };
-
-            transactions.push(newTransaction);
-            localStorage.setItem('dca_portfolio_data', JSON.stringify(transactions));
-            
-            form.reset();
-            // Set lại ngày mặc định là hôm nay
-            document.getElementById('date').valueAsDate = new Date();
-            
-            updateUI();
-        });
-
-        // Xóa giao dịch
-        window.deleteTransaction = (id) => {
-            if(confirm('Bạn có chắc chắn muốn xóa giao dịch này không?')) {
-                transactions = transactions.filter(t => t.id !== id);
-                localStorage.setItem('dca_portfolio_data', JSON.stringify(transactions));
-                updateUI();
-            }
-        };
-
-        // Khởi tạo app
-        document.getElementById('date').valueAsDate = new Date();
-        updateUI();
-
+        }
     </script>
 </body>
 </html>
